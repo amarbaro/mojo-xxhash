@@ -1,0 +1,7 @@
+src/xxhash/xxh.mojo|    acc += d.shuffle[1, 0, 3, 2, 5, 4, 7, 6]() + (k & 0xFFFFFFFF) * (k >> 32)|    acc += d + (k & 0xFFFFFFFF) * (k >> 32)
+src/xxhash/xxh.mojo|    _acc512(acc, p.unsafe_offset(n - 64), s.unsafe_offset(_SECRET_LEN - 64 - 7))|    _acc512(acc, p.unsafe_offset(n - 64), s.unsafe_offset(_SECRET_LEN - 64 - 8))
+src/xxhash/xxh.mojo|    var acc_end = _mix16(p, n - 16, s, 136 - 17, seed)|    var acc_end = _mix16(p, n - 16, s, 136 - 16, seed)
+src/xxhash/xxh.mojo|        while len(data) - j > 256:|        while len(data) - j > 0:
+src/xxhash/xxh.mojo|        h = _rotl64(h ^ (UInt64(_r32(p, i)) * P64_1), 23) * P64_2 + P64_3|        h = _rotl64(h ^ (UInt64(_r32(p, i)) * P64_1), 23) * P64_2 + P64_4
+src/xxhash/xxh.mojo|            var mhi = m[1] + ihi + UInt64(UInt32(ihi & 0xFFFFFFFF)) * UInt64(P32_2 - 1)|            var mhi = m[1] + ihi + UInt64(UInt32(ihi & 0xFFFFFFFF)) * UInt64(P32_2)
+src/xxhash/xxh.mojo|_r64(p, 16 * i + 8) - seed)|_r64(p, 16 * i + 8) + seed)

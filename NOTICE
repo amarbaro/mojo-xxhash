@@ -1,0 +1,6 @@
+mojo-xxhash
+Copyright 2026 AMARBARO · amarbaro.org labs <dev@amarbaro.org>
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+xxHash algorithm and constants: Copyright (C) 2012-2023 Yann Collet, BSD-2-Clause, full text in LICENSE-xxhash.

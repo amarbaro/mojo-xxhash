@@ -1,0 +1,14 @@
+[project]
+name = "mojo-xxhash"
+version = "0.1.0"
+description = "xxHash for Mojo: XXH32, XXH64, XXH3-64 and XXH3-128 with seeds and streaming, pure Mojo, identical to the reference"
+license = "Apache-2.0"
+requires-python = ">=3.11,<3.15"
+dependencies = ["mojo>=1.2.0,<1.3"]
+
+[project.urls]
+Homepage = "https://github.com/amarbaro/mojo-xxhash"
+Repository = "https://github.com/amarbaro/mojo-xxhash"
+
+[dependency-groups]
+dev = ["xxhash==3.6.0"]
