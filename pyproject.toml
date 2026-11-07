@@ -1,6 +1,6 @@
 [project]
 name = "mojo-xxhash"
-version = "0.1.0"
+version = "0.1.1"
 description = "xxHash for Mojo: XXH32, XXH64, XXH3-64 and XXH3-128 with seeds and streaming, pure Mojo, identical to the reference"
 license = "Apache-2.0"
 requires-python = ">=3.11,<3.15"
