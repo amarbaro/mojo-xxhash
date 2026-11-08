@@ -24,13 +24,13 @@ comptime _BLOCK_STRIPES = (_SECRET_LEN - 64) // 8  # 16
 
 # ---------------------------------------------------------------- little helpers
 @always_inline
-def _r32(p: UnsafePointer[UInt8, _], i: Int) -> UInt32:
+def _r32(p: Pointer[UInt8, _], i: Int) -> UInt32:
     comptime assert is_little_endian(), "mojo-xxhash reads little-endian words: big-endian hosts are not supported"
     return (p.unsafe_offset(i)).unsafe_bitcast[UInt32]().unsafe_load[alignment=1]()
 
 
 @always_inline
-def _r64(p: UnsafePointer[UInt8, _], i: Int) -> UInt64:
+def _r64(p: Pointer[UInt8, _], i: Int) -> UInt64:
     comptime assert is_little_endian(), "mojo-xxhash reads little-endian words: big-endian hosts are not supported"
     return (p.unsafe_offset(i)).unsafe_bitcast[UInt64]().unsafe_load[alignment=1]()
 
@@ -73,7 +73,7 @@ def _round32(acc: UInt32, v: UInt32) -> UInt32:
     return _rotl32(acc + v * P32_2, 13) * P32_1
 
 
-def _xxh32_tail(var h: UInt32, p: UnsafePointer[UInt8, _], var i: Int, n: Int) -> UInt32:
+def _xxh32_tail(var h: UInt32, p: Pointer[UInt8, _], var i: Int, n: Int) -> UInt32:
     while i + 4 <= n:
         h = _rotl32(h + _r32(p, i) * P32_3, 17) * P32_4
         i += 4
@@ -128,7 +128,7 @@ def _avalanche64(var h: UInt64) -> UInt64:
     return h ^ (h >> 32)
 
 
-def _xxh64_tail(var h: UInt64, p: UnsafePointer[UInt8, _], var i: Int, n: Int) -> UInt64:
+def _xxh64_tail(var h: UInt64, p: Pointer[UInt8, _], var i: Int, n: Int) -> UInt64:
     while i + 8 <= n:
         h = _rotl64(h ^ _round64(0, _r64(p, i)), 27) * P64_1 + P64_4
         i += 8
@@ -149,7 +149,7 @@ def _xxh64_lanes(v: SIMD[DType.uint64, 4]) -> UInt64:
 
 
 @always_inline
-def _stripes64(mut v: SIMD[DType.uint64, 4], p: UnsafePointer[UInt8, _], var i: Int, end: Int) -> Int:
+def _stripes64(mut v: SIMD[DType.uint64, 4], p: Pointer[UInt8, _], var i: Int, end: Int) -> Int:
     while i + 32 <= end:
         var x = v + (p.unsafe_offset(i)).unsafe_bitcast[UInt64]().unsafe_load[width=4, alignment=1]() * P64_2
         v = ((x << 31) | (x >> 33)) * P64_1
@@ -228,19 +228,19 @@ def _rrmxmx(var h: UInt64, n: Int) -> UInt64:
 
 
 @always_inline
-def _mix16(p: UnsafePointer[UInt8, _], i: Int, s: UnsafePointer[UInt8, _], j: Int, seed: UInt64) -> UInt64:
+def _mix16(p: Pointer[UInt8, _], i: Int, s: Pointer[UInt8, _], j: Int, seed: UInt64) -> UInt64:
     return _fold64(_r64(p, i) ^ (_r64(s, j) + seed), _r64(p, i + 8) ^ (_r64(s, j + 8) - seed))
 
 
 @always_inline
-def _acc512(mut acc: SIMD[DType.uint64, 8], p: UnsafePointer[UInt8, _], s: UnsafePointer[UInt8, _]):
+def _acc512(mut acc: SIMD[DType.uint64, 8], p: Pointer[UInt8, _], s: Pointer[UInt8, _]):
     var d = p.unsafe_bitcast[UInt64]().unsafe_load[width=8, alignment=1]()
     var k = d ^ s.unsafe_bitcast[UInt64]().unsafe_load[width=8, alignment=1]()
     acc += d.shuffle[1, 0, 3, 2, 5, 4, 7, 6]() + (k & 0xFFFFFFFF) * (k >> 32)
 
 
 @always_inline
-def _scramble(mut acc: SIMD[DType.uint64, 8], s: UnsafePointer[UInt8, _]):
+def _scramble(mut acc: SIMD[DType.uint64, 8], s: Pointer[UInt8, _]):
     acc = (acc ^ (acc >> 47) ^ s.unsafe_bitcast[UInt64]().unsafe_load[width=8, alignment=1]()) * UInt64(P32_1)
 
 
@@ -248,14 +248,14 @@ def _init_acc() -> SIMD[DType.uint64, 8]:
     return SIMD[DType.uint64, 8](UInt64(P32_3), P64_1, P64_2, P64_3, P64_4, UInt64(P32_2), P64_5, UInt64(P32_1))
 
 
-def _merge(acc: SIMD[DType.uint64, 8], s: UnsafePointer[UInt8, _], j: Int, start: UInt64) -> UInt64:
+def _merge(acc: SIMD[DType.uint64, 8], s: Pointer[UInt8, _], j: Int, start: UInt64) -> UInt64:
     var r = start
     for k in range(4):
         r += _fold64(acc[2 * k] ^ _r64(s, j + 16 * k), acc[2 * k + 1] ^ _r64(s, j + 16 * k + 8))
     return _avalanche3(r)
 
 
-def _long_acc(p: UnsafePointer[UInt8, _], n: Int, s: UnsafePointer[UInt8, _]) -> SIMD[DType.uint64, 8]:
+def _long_acc(p: Pointer[UInt8, _], n: Int, s: Pointer[UInt8, _]) -> SIMD[DType.uint64, 8]:
     var acc = _init_acc()
     var block = 64 * _BLOCK_STRIPES
     var blocks = (n - 1) // block
@@ -271,7 +271,7 @@ def _long_acc(p: UnsafePointer[UInt8, _], n: Int, s: UnsafePointer[UInt8, _]) ->
 
 
 @always_inline
-def _ksec() -> UnsafePointer[UInt8, ImmStaticOrigin]:
+def _ksec() -> Pointer[UInt8, ImmStaticOrigin]:
     """The default secret, in static memory: no copy, no allocation."""
     return Pointer(to=global_constant[_SECRET_V]()).unsafe_bitcast[UInt8]()
 
@@ -291,7 +291,7 @@ def _secret_for(seed: UInt64) -> Array[UInt8, 192]:
 
 
 # ---------------------------------------------------------------- XXH3-64
-def _xxh3_64_short(p: UnsafePointer[UInt8, _], n: Int, s: UnsafePointer[UInt8, _], seed: UInt64) -> UInt64:
+def _xxh3_64_short(p: Pointer[UInt8, _], n: Int, s: Pointer[UInt8, _], seed: UInt64) -> UInt64:
     """n <= 240, with the default secret (seed folded in as the reference does)."""
     if n <= 16:
         if n > 8:
@@ -339,14 +339,14 @@ def xxh3_64(data: Span[UInt8, _], seed: UInt64 = 0) -> UInt64:
 
 # ---------------------------------------------------------------- XXH3-128 (low, high)
 @always_inline
-def _mix32(mut lo: UInt64, mut hi: UInt64, p: UnsafePointer[UInt8, _], a: Int, b: Int, s: UnsafePointer[UInt8, _], j: Int, seed: UInt64):
+def _mix32(mut lo: UInt64, mut hi: UInt64, p: Pointer[UInt8, _], a: Int, b: Int, s: Pointer[UInt8, _], j: Int, seed: UInt64):
     lo += _mix16(p, a, s, j, seed)
     lo ^= _r64(p, b) + _r64(p, b + 8)
     hi += _mix16(p, b, s, j + 16, seed)
     hi ^= _r64(p, a) + _r64(p, a + 8)
 
 
-def _xxh3_128_short(p: UnsafePointer[UInt8, _], n: Int, s: UnsafePointer[UInt8, _], seed: UInt64) -> Tuple[UInt64, UInt64]:
+def _xxh3_128_short(p: Pointer[UInt8, _], n: Int, s: Pointer[UInt8, _], seed: UInt64) -> Tuple[UInt64, UInt64]:
     if n <= 16:
         if n > 8:
             var bl = (_r64(s, 32) ^ _r64(s, 40)) - seed
@@ -418,7 +418,7 @@ def xxh3_128(data: Span[UInt8, _], seed: UInt64 = 0) -> UInt128:
 
 # ---------------------------------------------------------------- XXH3 streaming
 def _consume(
-    mut acc: SIMD[DType.uint64, 8], mut stripes: Int, s: UnsafePointer[UInt8, _], p: UnsafePointer[UInt8, _]
+    mut acc: SIMD[DType.uint64, 8], mut stripes: Int, s: Pointer[UInt8, _], p: Pointer[UInt8, _]
 ):
     _acc512(acc, p, s.unsafe_offset(8 * stripes))
     stripes += 1
